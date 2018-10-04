@@ -5,10 +5,12 @@ const admin = require("firebase-admin");
 const firebaseHelper = require("firebase-functions-helper");
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require('cors');
 const moment = require('moment');
 admin.initializeApp(functions.config().firebase);
 const db = admin.firestore();
 const app = express();
+app.use(cors());
 const main = express();
 const dressCollection = 'dress';
 main.use('/api/v1', app);
@@ -38,8 +40,14 @@ app.get('/dress/:dressId', (req, res) => {
         .getDocument(db, dressCollection, req.params.dressId)
         .then(doc => res.status(200).send(doc));
 });
-// View all dress
+// View all dress with limit and page
 app.get('/dress', (req, res) => {
+    // DANGER - accept requests from everywhere
+    // res.setHeader('Access-Control-Allow-Origin', '*');
+    // Here allow all the HTTP methods you want
+    // res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,HEAD,PUT,OPTIONS');
+    // Here you allow the headers for the HTTP requests to your server
+    // res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     const limit = parseInt(req.query.limit);
     const page = parseInt(req.query.page);
     const latestArray = (limit * (page - 1));
