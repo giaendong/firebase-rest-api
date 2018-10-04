@@ -39,11 +39,43 @@ app.get('/dress/:dressId', (req, res) => {
         .getDocument(db, dressCollection, req.params.dressId)
         .then(doc => res.status(200).send(doc));
 })
-// View all dress
+// View all dress with limit and page
 app.get('/dress', (req, res) => {
-    firebaseHelper.firestore
-        .backup(db, dressCollection)
-        .then(data => res.status(200).send(data))
+    const limit = parseInt(req.query.limit);
+    const page = parseInt(req.query.page);
+    const latestArray = (limit * (page - 1));
+    let data = {};
+    let lastVisible = {};
+    data[dressCollection] = {};
+    if (page <= 1) {
+        db.collection(dressCollection).limit(limit).get().then(function(querySnapshot) {
+            querySnapshot.forEach(doc => {
+                // doc.data() is never undefined for query doc snapshots
+                data[dressCollection][doc.id] = doc.data();
+            });
+            return res.status(200).send(data)
+        }).catch(error => {
+            console.log(error);
+        })
+    } else {
+        db.collection(dressCollection).limit(latestArray).get().then(function(documentSnapshots) {
+            lastVisible = documentSnapshots.docs[documentSnapshots.docs.length-1];
+            db.collection(dressCollection).startAfter(lastVisible).limit(limit).get().then(function(querySnapshot) {
+                querySnapshot.forEach(doc => {
+                    // doc.data() is never undefined for query doc snapshots
+                    data[dressCollection][doc.id] = doc.data();
+                });
+                return res.status(200).send(data)
+            }).catch(error => {
+                console.log(error);
+            })
+        }).catch(error => {
+            console.log(error);
+        })
+    }
+    // firebaseHelper.firestore
+    //     .backup(db, dressCollection)
+    //     .then(data => res.status(200).send(data))
 })
 // Delete a dress 
 app.delete('/dress/:dressId', (req, res) => {
